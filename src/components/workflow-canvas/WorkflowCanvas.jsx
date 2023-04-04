@@ -1,7 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import DatabaseNode from '../customs/DatabaseNode';
 import ChildNode from '../customs/ChildNode';
+import FilterNode from '../customs/FilterNode';
+import SortByNode from '../customs/SortByNode';
 import Popup from '../popup/Popup';
+import PopupFilter from '../popup/PopupFilter';
+import PopupSortBy from '../popup/PopupSortBy';
+import OutputNode from '../customs/OutputNode';
+import PopupOutput from '../popup/PopupOuput';
 import ReactFlow, {
     MiniMap, Controls, Background, ReactFlowProvider,
     addEdge,
@@ -15,7 +21,18 @@ import useStore from '../../app/store';
 let id = 0;
 const getId = () => `dndnode_${id++}`;
 
-const nodeTypes = { Database: DatabaseNode, ChildNode: ChildNode }
+let database = 0
+let shortBy = 0
+let Filter = 0
+let output = 0
+
+const nodeTypes = {
+    Database: DatabaseNode,
+    ChildNode: ChildNode,
+    Filter: FilterNode,
+    SortBy: SortByNode,
+    output: OutputNode
+}
 
 const WorkflowCanvas = () => {
     const [variant, setVariant] = useState('cross');
@@ -24,10 +41,16 @@ const WorkflowCanvas = () => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
-    const [showPopup, setShowPopup] = useState(false);
+    const [showPopup, setShowPopup] = useState('');
     const allNodes = useStore(state => state.allNodes);
+    const addNodesToState = useStore(state => state.addNodes);
+    const addEdgesToState = useStore(state => state.addEdges);
 
-    const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+    const onConnect = useCallback((params) => {
+        const newEdges = addEdge(params, edges);
+        setEdges(newEdges);
+        addEdgesToState(newEdges);
+    }, [edges, addEdgesToState]);
 
     const onDragOver = useCallback((event) => {
         event.preventDefault();
@@ -60,7 +83,11 @@ const WorkflowCanvas = () => {
     }
 
     const onNodeDoubleClick = (event, node) => {
-        setShowPopup(!showPopup);
+        if (node !== undefined) {
+            setShowPopup(node.data.label);
+        } else {
+            setShowPopup('');
+        }
     }
 
     const onDrop = useCallback(
@@ -78,7 +105,7 @@ const WorkflowCanvas = () => {
             });
             let newNode = {}
             let height = (nodes.length + 1) * 75;
-            if (type.includes('Database')) {
+            if (type.includes('Database') && database < 2) {
                 newNode = {
                     id: getId() + 'A',
                     type: 'input',
@@ -87,8 +114,45 @@ const WorkflowCanvas = () => {
                     type: 'Database',
                     style: { backgroundColor: '#f2f2f5', color: 'black', width: '200px', minHeight: '30px' },
                 }
+                database++
+                addNodesToState(newNode)
+                setNodes((nds) => nds.concat(newNode));
+            } else if (type.includes('Filter') && shortBy < 2) {
+                newNode = {
+                    id: getId(),
+                    type: 'input',
+                    data: { label: `${type}` },
+                    position,
+                    type: 'Filter',
+                    style: { color: 'black', minHeight: '30px' },
+                }
+                shortBy++
+                addNodesToState(newNode)
+                setNodes((nds) => nds.concat(newNode));
+            } else if (type.includes('SortBy') && Filter < 2) {
+                newNode = {
+                    id: getId(),
+                    type: 'input',
+                    data: { label: `${type}` },
+                    position,
+                    type: 'SortBy',
+                    style: { color: 'black', minHeight: '30px' },
+                }
+                Filter++
+                addNodesToState(newNode)
+                setNodes((nds) => nds.concat(newNode));
+            } else if (type.includes('output') && output < 1) {
+                newNode = {
+                    id: getId(),
+                    type: 'output',
+                    data: { label: `${type}` },
+                    position,
+                    style: { color: 'black', minHeight: '30px' },
+                }
+                output++
+                addNodesToState(newNode)
+                setNodes((nds) => nds.concat(newNode));
             }
-            setNodes((nds) => nds.concat(newNode));
         },
         [reactFlowInstance]
     );
@@ -99,8 +163,29 @@ const WorkflowCanvas = () => {
 
     return (
         <div style={{ height: '90vh', width: '80vw', border: '1px solid black', boxSizing: 'border-box' }}>
-            {showPopup &&
+            {showPopup === 'Database' &&
                 <Popup
+                    onClose={onNodeDoubleClick}
+                    onApply={onNodeDoubleClick}
+                    activeNode={activeNode}
+                    addChildreNodes={addChildreNodes}
+                />}
+            {showPopup === 'Filter' &&
+                <PopupFilter
+                    onClose={onNodeDoubleClick}
+                    onApply={onNodeDoubleClick}
+                    activeNode={activeNode}
+                    addChildreNodes={addChildreNodes}
+                />}
+            {showPopup === 'SortBy' &&
+                <PopupSortBy
+                    onClose={onNodeDoubleClick}
+                    onApply={onNodeDoubleClick}
+                    activeNode={activeNode}
+                    addChildreNodes={addChildreNodes}
+                />}
+            {showPopup === 'output' &&
+                <PopupOutput
                     onClose={onNodeDoubleClick}
                     onApply={onNodeDoubleClick}
                     activeNode={activeNode}

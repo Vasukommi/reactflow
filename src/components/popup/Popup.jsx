@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
+import useStore from '../../app/store';
 import './Popup.css';
 
 let id = 0;
 const getId = () => `child_${id++}`;
 
 const Popup = ({ onClose, onApply, activeNode, addChildreNodes }) => {
-    const [selectedOptions, setSelectedOptions] = useState([]);
-    const [selectedHeaders, setHeaderOptions] = useState([]);
+    const [selectedOptions, setSelectedOptions] = useState(useStore((state) => state.selectedTables));
+    const [selectedHeaders, setHeaderOptions] = useState(useStore((state) => state.selectedHeaders));
     const [options, setOptions] = useState([]);
+    const addTables = useStore(state => state.addTables);
+    const addHeaders = useStore(state => state.addHeaders);
 
     const setShowPopup = () => {
         onClose()
@@ -32,6 +35,8 @@ const Popup = ({ onClose, onApply, activeNode, addChildreNodes }) => {
             totalHeight += 15;
         });
         addChildreNodes(childNodes, activeNode);
+        addTables(...selectedOptions)
+        addHeaders(...selectedHeaders)
         onClose();
     };
 
@@ -106,19 +111,22 @@ const Popup = ({ onClose, onApply, activeNode, addChildreNodes }) => {
                     alignItems: 'center'
                 }
             }>
-                <div>
+                <div style={{ minWidth: '100%' }}>
+                    <h1 style={{ textAlign: 'start' }}>Tables</h1>
                     <Select
                         isMulti
                         options={options}
                         value={selectedOptions}
                         onChange={setSelectedOptions}
                     />
-                    {selectedOptions.length > 0 && <Select
-                        isMulti
-                        options={options}
-                        value={selectedHeaders}
-                        onChange={setHeaderOptions}
-                    />}
+                    {selectedOptions.length > 0 && <h1 style={{ textAlign: 'start' }}>Table Headers</h1>}
+                    {selectedOptions.length > 0 &&
+                        <Select
+                            isMulti
+                            options={options}
+                            value={selectedHeaders}
+                            onChange={setHeaderOptions}
+                        />}
                 </div>
                 <div>
                     <button onClick={() => setShowPopup(false)}>Close</button>

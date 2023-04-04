@@ -1,5 +1,6 @@
 import React from 'react';
 import { Handle } from 'reactflow';
+import { BsDatabaseFillAdd } from 'react-icons/bs';
 
 const DatabaseNode = ({ data }) => {
     const customHandle = {
@@ -11,7 +12,7 @@ const DatabaseNode = ({ data }) => {
     return (
         <div>
             <Handle type="target" position="left" style={customHandle} />
-            <div>Database</div>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>Database <BsDatabaseFillAdd /></div>
             <Handle type="source" position="right" style={customHandle} />
         </div>
     );
